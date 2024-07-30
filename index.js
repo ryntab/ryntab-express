@@ -37,9 +37,7 @@ app.post('/api/scan', async (req, res) => {
         site = ensureFullyQualifiedDomain(site);
 
         // Scan the site
-        const result = await scanWithQueue(site, {
-            target: 'browser'
-        });
+        const result = await scanWithQueue(site, {});
 
         res.send({ result });
     } catch (error) {
