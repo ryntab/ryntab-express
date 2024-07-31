@@ -36,6 +36,14 @@ const ensureFullyQualifiedDomain = (site) => {
   }
 };
 
+const extractSiteName = (url) => {
+  try {
+    return new URL(url).hostname.replace('www.', '');
+  } catch (e) {
+    return url;
+  }
+};
+
 const handleScanRequest = async (req, res) => {
   const site = req.body.site;
 
@@ -77,6 +85,27 @@ const handleScanRequest = async (req, res) => {
 
 // Define API route
 app.post('/api/scan', handleScanRequest);
+
+app.get('/api/scan/recent', async (req, res) => {
+  try {
+    // Ensure Redis client is connected
+    if (!redis.isOpen) {
+      await redis.connect();
+    }
+
+    const keys = await redis.keys('*');
+    const results = await Promise.all(keys.map(key => redis.get(key)));
+
+    res.send({
+      recents: results.map((result, index) => ({
+        site: extractSiteName(keys[index]),
+      }))
+    });
+  } catch (error) {
+    console.error(`Error fetching recent scans: ${error.message}`);
+    res.status(500).send({ error: error.message });
+  }
+});
 
 // Start the server
 app.listen(PORT, () => {
